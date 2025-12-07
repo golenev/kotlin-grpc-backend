@@ -4,15 +4,18 @@ import com.example.grpce2e.kafka.OrdersProducerKafkaSettings
 import com.example.grpce2e.kafka.ProducerKafkaService
 import com.example.grpce2e.model.OrderEvent
 import com.example.grpce2e.model.OrderItem
+import com.example.grpce2e.db.SellerAggregateRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertTimeout
+import io.kotest.assertions.timing.eventually
+import io.kotest.assertions.timing.eventuallyConfig
+import io.kotest.matchers.comparables.plusOrMinus
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.runBlocking
 import java.math.BigDecimal
-import java.sql.DriverManager
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class GrpcE2eTest {
     private val objectMapper = ObjectMapper().registerKotlinModule()
@@ -20,24 +23,28 @@ class GrpcE2eTest {
     private lateinit var producer: ProducerKafkaService<OrderEvent>
 
     @Test
-    fun `orders flow enriches and aggregates seller stats`() {
-        sendOrders()
+    fun `orders flow enriches and aggregates seller stats`() = runBlocking {
+        val sellerId = "SELLER-TEST"
+        try {
+            sendOrders()
 
-        assertTimeout(Duration.ofSeconds(60)) {
-            eventually {
-                val aggregate = fetchAggregate()
-                assertEquals(3L, aggregate.totalOrders)
-                assertEquals(6L, aggregate.totalItems)
-                assertEquals(BigDecimal("550.00"), aggregate.totalRevenue)
-                assertTrue(aggregate.avgCheck.subtract(BigDecimal("183.33")).abs() < BigDecimal("0.1"))
+            eventually(positiveConfig) {
+                val aggregate = SellerAggregateRepository.findBySellerId(sellerId).shouldNotBeNull()
+                aggregate.sellerId shouldBe sellerId
+                aggregate.totalOrders shouldBe 3L
+                aggregate.totalItems shouldBe 6L
+                aggregate.totalRevenue shouldBe BigDecimal("550.00")
+                aggregate.avgCheck shouldBe BigDecimal("183.33").plusOrMinus(BigDecimal("0.1"))
             }
+        } finally {
+            SellerAggregateRepository.deleteBySellerId(sellerId)
         }
     }
 
     private fun sendOrders() {
         val producerConfig = producerSettings.createProducerConfig()
 
-      producer =  ProducerKafkaService(
+        producer = ProducerKafkaService(
             cfg = producerConfig,
             topic = producerSettings.inputTopic,
             mapper = objectMapper
@@ -86,47 +93,8 @@ class GrpcE2eTest {
         }
     }
 
-    private fun fetchAggregate(): SellerAggregateRow {
-        val url = System.getenv("ANALYTICS_JDBC_URL") ?: "jdbc:postgresql://localhost:5433/analytics"
-        val user = System.getenv("ANALYTICS_DB_USER") ?: "analytics"
-        val password = System.getenv("ANALYTICS_DB_PASSWORD") ?: "analytics"
-        DriverManager.getConnection(url, user, password).use { conn ->
-            conn.createStatement().use { stmt ->
-                val rs = stmt.executeQuery("SELECT seller_id, total_orders, total_items, total_revenue, avg_check FROM seller_aggregates WHERE seller_id='SELLER-TEST'")
-                if (rs.next()) {
-                    return SellerAggregateRow(
-                        sellerId = rs.getString("seller_id"),
-                        totalOrders = rs.getLong("total_orders"),
-                        totalItems = rs.getLong("total_items"),
-                        totalRevenue = rs.getBigDecimal("total_revenue"),
-                        avgCheck = rs.getBigDecimal("avg_check"),
-                    )
-                }
-            }
-        }
-        throw IllegalStateException("Aggregate not ready")
-    }
-
-    private fun eventually(block: () -> Unit) {
-        val deadline = System.currentTimeMillis() + 60000
-        var lastError: Throwable? = null
-        while (System.currentTimeMillis() < deadline) {
-            try {
-                block()
-                return
-            } catch (ex: Exception) {
-                lastError = ex
-                Thread.sleep(2000)
-            }
-        }
-        throw lastError ?: IllegalStateException("Condition not met in time")
+    private val positiveConfig = eventuallyConfig {
+        duration = 40.seconds
+        interval = 5.seconds
     }
 }
-
-data class SellerAggregateRow(
-    val sellerId: String,
-    val totalOrders: Long,
-    val totalItems: Long,
-    val totalRevenue: BigDecimal,
-    val avgCheck: BigDecimal,
-)
