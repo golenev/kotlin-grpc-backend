@@ -10,6 +10,8 @@ plugins {
 dependencies {
     implementation(project(":analytics-proto"))
 
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.3.5"))
+
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-kafka")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
