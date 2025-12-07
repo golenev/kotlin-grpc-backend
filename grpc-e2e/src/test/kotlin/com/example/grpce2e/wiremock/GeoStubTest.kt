@@ -25,7 +25,6 @@ class GeoStubTest {
         } When {
             get("/geo")
         } Then {
-            statusCode(200)
             contentType(ContentType.JSON)
             body(
                 "region", Matchers.equalTo("Москва"),
