@@ -1,6 +1,6 @@
 FROM eclipse-temurin:21-jdk as build
 WORKDIR /app
-COPY .. .
+COPY . .
 RUN ./gradlew :order-service:bootJar --no-daemon
 
 FROM eclipse-temurin:21-jre
