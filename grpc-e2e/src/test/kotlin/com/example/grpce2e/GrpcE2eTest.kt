@@ -1,11 +1,11 @@
 package com.example.grpce2e
 
+import com.example.grpce2e.kafka.OrdersProducerKafkaSettings
+import com.example.grpce2e.kafka.ProducerKafkaService
+import com.example.grpce2e.model.OrderEvent
+import com.example.grpce2e.model.OrderItem
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.clients.producer.ProducerConfig
-import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.serialization.StringSerializer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -13,10 +13,10 @@ import org.junit.jupiter.api.assertTimeout
 import java.math.BigDecimal
 import java.sql.DriverManager
 import java.time.Duration
-import java.util.Properties
 
 class GrpcE2eTest {
     private val objectMapper = ObjectMapper().registerKotlinModule()
+    private val producerSettings = OrdersProducerKafkaSettings()
 
     @Test
     fun `orders flow enriches and aggregates seller stats`() {
@@ -34,54 +34,53 @@ class GrpcE2eTest {
     }
 
     private fun sendOrders() {
-        val props = Properties()
-        props[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = System.getenv("KAFKA_BOOTSTRAP_SERVERS") ?: "localhost:9092"
-        props[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
-        props[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
-        val producer = KafkaProducer<String, String>(props)
+        val producerConfig = producerSettings.createProducerConfig()
 
-        val orders = listOf(
-            mapOf(
-                "orderId" to "ORD-1",
-                "sellerId" to "SELLER-TEST",
-                "customerId" to "CUST-1",
-                "items" to listOf(mapOf("sku" to "SKU-1", "qty" to 1, "price" to 100.0)),
-                "currency" to "RUB",
-                "totalAmount" to 100.0,
-                "lat" to 55.0,
-                "lon" to 37.0,
-                "channel" to "WEB"
-            ),
-            mapOf(
-                "orderId" to "ORD-2",
-                "sellerId" to "SELLER-TEST",
-                "customerId" to "CUST-1",
-                "items" to listOf(mapOf("sku" to "SKU-2", "qty" to 2, "price" to 150.0)),
-                "currency" to "RUB",
-                "totalAmount" to 300.0,
-                "lat" to 55.0,
-                "lon" to 37.0,
-                "channel" to "WEB"
-            ),
-            mapOf(
-                "orderId" to "ORD-3",
-                "sellerId" to "SELLER-TEST",
-                "customerId" to "CUST-1",
-                "items" to listOf(mapOf("sku" to "SKU-3", "qty" to 3, "price" to 50.0)),
-                "currency" to "RUB",
-                "totalAmount" to 150.0,
-                "lat" to 55.0,
-                "lon" to 37.0,
-                "channel" to "WEB"
+        ProducerKafkaService(
+            cfg = producerConfig,
+            topic = producerSettings.inputTopic,
+            mapper = objectMapper,
+        ).use { producer ->
+            val orders = listOf(
+                OrderEvent(
+                    orderId = "ORD-1",
+                    sellerId = "SELLER-TEST",
+                    customerId = "CUST-1",
+                    items = listOf(OrderItem(sku = "SKU-1", qty = 1, price = BigDecimal("100.00"))),
+                    currency = "RUB",
+                    totalAmount = BigDecimal("100.00"),
+                    lat = 55.0,
+                    lon = 37.0,
+                    channel = "WEB",
+                ),
+                OrderEvent(
+                    orderId = "ORD-2",
+                    sellerId = "SELLER-TEST",
+                    customerId = "CUST-1",
+                    items = listOf(OrderItem(sku = "SKU-2", qty = 2, price = BigDecimal("150.00"))),
+                    currency = "RUB",
+                    totalAmount = BigDecimal("300.00"),
+                    lat = 55.0,
+                    lon = 37.0,
+                    channel = "WEB",
+                ),
+                OrderEvent(
+                    orderId = "ORD-3",
+                    sellerId = "SELLER-TEST",
+                    customerId = "CUST-1",
+                    items = listOf(OrderItem(sku = "SKU-3", qty = 3, price = BigDecimal("50.00"))),
+                    currency = "RUB",
+                    totalAmount = BigDecimal("150.00"),
+                    lat = 55.0,
+                    lon = 37.0,
+                    channel = "WEB",
+                ),
             )
-        )
 
-        orders.forEach {
-            val json = objectMapper.writeValueAsString(it)
-            producer.send(ProducerRecord("big-communal-orders-topic", it["orderId"].toString(), json))
+            orders.forEach { order ->
+                producer.send(order.orderId, order)
+            }
         }
-        producer.flush()
-        producer.close()
     }
 
     private fun fetchAggregate(): SellerAggregateRow {
