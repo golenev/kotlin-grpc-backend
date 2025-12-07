@@ -6,6 +6,8 @@ dependencies {
     implementation(project(":analytics-proto"))
     testImplementation(kotlin("test"))
     testImplementation("io.kotest:kotest-assertions-core:5.9.1")
+    testImplementation("io.rest-assured:kotlin-extensions:5.4.0")
+    testImplementation("io.rest-assured:rest-assured:5.4.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
     testImplementation("org.apache.kafka:kafka-clients:3.7.1")
     testImplementation("org.postgresql:postgresql:42.7.4")
