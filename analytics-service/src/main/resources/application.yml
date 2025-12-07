@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: analytics-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/analytics}
+    username: ${SPRING_DATASOURCE_USERNAME:analytics}
+    password: ${SPRING_DATASOURCE_PASSWORD:analytics}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+
+grpc:
+  server:
+    port: ${GRPC_SERVER_PORT:9091}
