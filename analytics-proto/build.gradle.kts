@@ -1,3 +1,8 @@
+import com.google.protobuf.gradle.generateProtoTasks
+import com.google.protobuf.gradle.id
+import com.google.protobuf.gradle.protobuf
+import com.google.protobuf.gradle.protoc
+
 plugins {
     java
     id("com.google.protobuf")
