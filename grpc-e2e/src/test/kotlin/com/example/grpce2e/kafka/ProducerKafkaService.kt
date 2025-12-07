@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.AuthenticationException
-import org.slf4j.LoggerFactory
+import org.junit.platform.commons.logging.LoggerFactory
 import java.util.concurrent.TimeUnit
 
 class ProducerKafkaService<T : Any>(
@@ -20,10 +20,12 @@ class ProducerKafkaService<T : Any>(
         producer = try {
             KafkaProducer(cfg.toProperties())
         } catch (authException: AuthenticationException) {
-            logger.error("Failed to initialize Kafka producer for topic {} due to authentication error", topic, authException)
+            logger.info(authException) {
+                "Failed to initialize Kafka producer for topic $topic due to authentication error"
+            }
             throw authException
         } catch (ex: Exception) {
-            logger.error("Failed to initialize Kafka producer for topic {}", topic, ex)
+            logger.error(ex){"Failed to initialize Kafka producer for topic $topic "}
             throw ex
         }
     }
@@ -38,18 +40,14 @@ class ProducerKafkaService<T : Any>(
 
         try {
             producer.send(record).get(30, TimeUnit.SECONDS)
-            logger.info("Sent payload with key={} to topic {}: {}", key, topic, json)
+            logger.debug{"Sent payload with key={$key} to topic {$topic}: {$json}"}
         } catch (ex: Exception) {
             val cause = ex.cause ?: ex
             if (cause is AuthenticationException) {
-                logger.error(
-                    "Authentication failed while sending payload with key={} to topic {}",
-                    key,
-                    topic,
-                    cause,
-                )
+                logger.error(cause){" \"Authentication failed while sending payload with key={$key} to topic {$topic}\""}
+
             } else {
-                logger.error("Failed to send payload with key={} to topic {}: {}", key, topic, json, ex)
+                logger.error(ex){"Failed to send payload with key={$key} to topic {$topic}: {$json}"}
             }
             throw ex
         }

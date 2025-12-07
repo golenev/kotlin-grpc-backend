@@ -17,6 +17,7 @@ import java.time.Duration
 class GrpcE2eTest {
     private val objectMapper = ObjectMapper().registerKotlinModule()
     private val producerSettings = OrdersProducerKafkaSettings()
+    private lateinit var producer: ProducerKafkaService<OrderEvent>
 
     @Test
     fun `orders flow enriches and aggregates seller stats`() {
@@ -36,11 +37,13 @@ class GrpcE2eTest {
     private fun sendOrders() {
         val producerConfig = producerSettings.createProducerConfig()
 
-        ProducerKafkaService(
+      producer =  ProducerKafkaService(
             cfg = producerConfig,
             topic = producerSettings.inputTopic,
-            mapper = objectMapper,
-        ).use { producer ->
+            mapper = objectMapper
+        )
+
+        producer.use { producer ->
             val orders = listOf(
                 OrderEvent(
                     orderId = "ORD-1",
