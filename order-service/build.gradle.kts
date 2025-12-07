@@ -1,5 +1,3 @@
-
-
 plugins {
     id("org.springframework.boot")
     id("io.spring.dependency-management")
@@ -10,17 +8,21 @@ plugins {
 dependencies {
     implementation(project(":analytics-proto"))
 
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.3.4"))
-
+    // Базовый Boot + WebFlux
     implementation("org.springframework.boot:spring-boot-starter")
-    implementation("org.springframework.boot:spring-boot-starter-kafka")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
+    // Вместо spring-boot-starter-kafka используем напрямую spring-kafka
+    // Boot BOM под управлением плагина сам проставит версию (3.3.x)
+    implementation("org.springframework.kafka:spring-kafka")
+
+    // gRPC
     val grpcVersion: String by rootProject.extra
     implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
     implementation("io.grpc:grpc-stub:$grpcVersion")
 
+    // gRPC client starter (трогать не будем)
     implementation("net.devh:grpc-client-spring-boot-starter:3.1.0.RELEASE")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
