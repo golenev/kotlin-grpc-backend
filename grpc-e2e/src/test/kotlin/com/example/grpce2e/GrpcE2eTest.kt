@@ -1,44 +1,50 @@
 package com.example.grpce2e
 
+import com.example.grpce2e.db.SellerAggregateRepository
 import com.example.grpce2e.kafka.OrdersProducerKafkaSettings
 import com.example.grpce2e.kafka.ProducerKafkaService
 import com.example.grpce2e.model.OrderEvent
 import com.example.grpce2e.model.OrderItem
-import com.example.grpce2e.db.SellerAggregateRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import org.junit.jupiter.api.Test
-import io.kotest.assertions.timing.eventually
-import io.kotest.assertions.timing.eventuallyConfig
-import io.kotest.matchers.comparables.plusOrMinus
+import io.kotest.assertions.nondeterministic.eventuallyConfig
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import kotlin.time.Duration.Companion.seconds
+import io.kotest.assertions.nondeterministic.eventually
 
 class GrpcE2eTest {
     private val objectMapper = ObjectMapper().registerKotlinModule()
     private val producerSettings = OrdersProducerKafkaSettings()
     private lateinit var producer: ProducerKafkaService<OrderEvent>
+    val sellerId = "SELLER-TEST"
+
+    @AfterEach
+    fun clearDb () {
+        SellerAggregateRepository.deleteBySellerId(sellerId)
+    }
 
     @Test
-    fun `orders flow enriches and aggregates seller stats`() = runBlocking {
-        val sellerId = "SELLER-TEST"
-        try {
-            sendOrders()
+    fun `orders flow enriches and aggregates seller stats`() {
 
-            eventually(positiveConfig) {
-                val aggregate = SellerAggregateRepository.findBySellerId(sellerId).shouldNotBeNull()
-                aggregate.sellerId shouldBe sellerId
-                aggregate.totalOrders shouldBe 3L
-                aggregate.totalItems shouldBe 6L
-                aggregate.totalRevenue shouldBe BigDecimal("550.00")
-                aggregate.avgCheck shouldBe BigDecimal("183.33").plusOrMinus(BigDecimal("0.1"))
-            }
-        } finally {
-            SellerAggregateRepository.deleteBySellerId(sellerId)
+        sendOrders()
+
+        val aggregate = runBlocking {
+            eventually(config = positiveConfig) {
+                SellerAggregateRepository.findBySellerId(sellerId).shouldNotBeNull()
+           }
         }
+
+        aggregate.sellerId shouldBe sellerId
+        aggregate.totalOrders shouldBe 3L
+        aggregate.totalItems shouldBe 6L
+        aggregate.totalRevenue shouldBe BigDecimal("550.00")
+        aggregate.avgCheck shouldBe BigDecimal("183.33")
+
     }
 
     private fun sendOrders() {
@@ -93,8 +99,9 @@ class GrpcE2eTest {
         }
     }
 
-    private val positiveConfig = eventuallyConfig {
-        duration = 40.seconds
-        interval = 5.seconds
-    }
+}
+
+val positiveConfig = eventuallyConfig {
+    duration = 40.seconds
+    interval = 5.seconds
 }

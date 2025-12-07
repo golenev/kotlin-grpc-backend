@@ -3,8 +3,9 @@ package com.example.grpce2e.db
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import java.math.BigDecimal
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 object SellerAggregatesTable : Table("seller_aggregates") {
     val sellerId = text("seller_id")
@@ -35,13 +36,15 @@ fun mapToSellerAggregate(row: ResultRow): SellerAggregateRow = SellerAggregateRo
 object SellerAggregateRepository {
 
     fun findBySellerId(sellerId: String): SellerAggregateRow? = dbAnalyticsExec {
-        SellerAggregatesTable.select { SellerAggregatesTable.sellerId eq sellerId }
-            .limit(1)
+        SellerAggregatesTable.selectAll()
+            .where { SellerAggregatesTable.sellerId eq sellerId }
+            .map { mapToSellerAggregate(it) }
             .firstOrNull()
-            ?.let { mapToSellerAggregate(it) }
     }
 
     fun deleteBySellerId(sellerId: String) = dbAnalyticsExec {
-        SellerAggregatesTable.deleteWhere { SellerAggregatesTable.sellerId eq sellerId }
+        SellerAggregatesTable.deleteWhere {
+            SellerAggregatesTable.sellerId eq sellerId
+        }
     }
 }
