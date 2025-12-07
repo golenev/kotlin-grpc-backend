@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: order-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: order-service-consumer
+      auto-offset-reset: earliest
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+geo:
+  base-url: ${GEO_BASE_URL:http://localhost:8031}
+
+grpc:
+  client:
+    analytics:
+      address: ${ANALYTICS_GRPC_TARGET:static://localhost:9091}
+      enableKeepAlive: true
+      negotiationType: PLAINTEXT

@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package analytics;
+
+option java_multiple_files = true;
+option java_package = "com.example.analytics";
+option java_outer_classname = "AnalyticsProto";
+
+message OrderItem {
+  string sku = 1;
+  int32 qty = 2;
+  double price = 3;
+}
+
+message EnrichedOrder {
+  string orderId    = 1;
+  string sellerId   = 2;
+  string customerId = 3;
+
+  repeated OrderItem items = 4;
+
+  double totalAmount = 5;
+  string currency    = 6;
+  string channel     = 7;
+
+  double lat = 8;
+  double lon = 9;
+
+  string region        = 10;
+  string city          = 11;
+  string timezone      = 12;
+  double regionalCoef  = 13;
+}
+
+message ProcessOrderResult {
+  bool success = 1;
+}
+
+message GetSellerAggregateRequest {
+  string sellerId = 1;
+}
+
+message SellerAggregate {
+  string sellerId        = 1;
+  int64 totalOrders      = 2;
+  int64 totalItems       = 3;
+  double totalRevenue    = 4;
+  double avgCheck        = 5;
+  string lastOrderAt     = 6;
+}
+
+service AnalyticsService {
+  rpc ProcessOrder(EnrichedOrder) returns (ProcessOrderResult);
+  rpc GetSellerAggregate(GetSellerAggregateRequest) returns (SellerAggregate);
+}
