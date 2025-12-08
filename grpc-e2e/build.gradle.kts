@@ -3,6 +3,8 @@ plugins {
 }
 
 dependencies {
+    val grpcVersion: String by rootProject.extra
+
     implementation(project(":analytics-proto"))
     testImplementation(kotlin("test"))
     testImplementation("io.kotest:kotest-assertions-core:5.9.1")
@@ -16,7 +18,7 @@ dependencies {
     testImplementation("org.jetbrains.exposed:exposed-dao:0.55.0")
     testImplementation("org.jetbrains.exposed:exposed-jdbc:0.55.0")
     testImplementation("org.jetbrains.exposed:exposed-java-time:0.55.0")
-    testImplementation("io.grpc:grpc-netty-shaded:1.64.0")
+    testImplementation("io.grpc:grpc-netty-shaded:$grpcVersion")
 }
 
 kotlin {
