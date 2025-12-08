@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package order;
+
+option java_multiple_files = true;
+option java_package = "com.example.order";
+option java_outer_classname = "OrderAggregationProto";
+
+service OrderAggregationService {
+  rpc GetSellerAggregate (SellerAggregateRequest) returns (SellerAggregateResponse);
+}
+
+message SellerAggregateRequest {
+  string seller_id = 1;
+}
+
+message SellerAggregateResponse {
+  string seller_id = 1;
+  int64 orders_count = 2;
+  int64 total_items = 3;
+  double total_amount = 4;
+  double avg_check = 5;
+  string last_order_at = 6;
+}

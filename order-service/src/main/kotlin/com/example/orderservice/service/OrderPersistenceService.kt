@@ -1,7 +1,5 @@
 package com.example.orderservice.service
 
-import com.example.analytics.EnrichedOrder
-import com.example.analytics.OrderItem
 import com.example.orderservice.model.GeoInfo
 import com.example.orderservice.model.OrderEntity
 import com.example.orderservice.model.OrderGeoEntity
@@ -18,7 +16,7 @@ class OrderPersistenceService(
     private val orderRepository: OrderRepository,
 ) {
     @Transactional
-    fun persistAndBuildEnriched(order: OrderMessage, geo: GeoInfo): EnrichedOrder {
+    fun persistOrder(order: OrderMessage, geo: GeoInfo): OrderEntity {
         val orderEntity = OrderEntity(
             orderId = order.orderId,
             sellerId = order.sellerId,
@@ -52,21 +50,6 @@ class OrderPersistenceService(
         orderEntity.geo = geoEntity
 
         val saved = orderRepository.save(orderEntity)
-
-        return EnrichedOrder.newBuilder()
-            .setOrderId(saved.orderId)
-            .setSellerId(saved.sellerId)
-            .setCustomerId(saved.customerId)
-            .addAllItems(saved.items.map { OrderItem.newBuilder().setSku(it.sku).setQty(it.qty).setPrice(it.price.toDouble()).build() })
-            .setTotalAmount(saved.totalAmount.toDouble())
-            .setCurrency(saved.currency)
-            .setChannel(saved.channel)
-            .setLat(saved.lat)
-            .setLon(saved.lon)
-            .setRegion(saved.geo?.region ?: geo.region)
-            .setCity(saved.geo?.city ?: geo.city)
-            .setTimezone(saved.geo?.timezone ?: geo.timezone)
-            .setRegionalCoef(saved.geo?.regionalCoef ?: geo.regionalCoef)
-            .build()
+        return saved
     }
 }

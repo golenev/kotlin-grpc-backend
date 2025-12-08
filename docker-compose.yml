@@ -82,9 +82,10 @@ services:
       SPRING_FLYWAY_URL: jdbc:postgresql://analytics-postgres:5432/analytics
       SPRING_FLYWAY_USER: analytics
       SPRING_FLYWAY_PASSWORD: analytics
-      GRPC_SERVER_PORT: 9091
+      ORDER_GRPC_TARGET: static://order-service:9090
+      SERVER_PORT: 8081
     ports:
-      - "9091:9091"
+      - "8081:8081"
 
   order-service:
     build:
@@ -95,17 +96,17 @@ services:
         condition: service_started
       wiremock-setup-core:
         condition: service_started
-      analytics-service:
-        condition: service_started
       orders-postgres:
         condition: service_healthy
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       GEO_BASE_URL: http://wiremock-setup-example:8080
-      ANALYTICS_GRPC_TARGET: static://analytics-service:9091
+      GRPC_SERVER_PORT: 9090
       SPRING_DATASOURCE_URL: jdbc:postgresql://orders-postgres:5432/orders
       SPRING_DATASOURCE_USERNAME: orders
       SPRING_DATASOURCE_PASSWORD: orders
       SPRING_FLYWAY_URL: jdbc:postgresql://orders-postgres:5432/orders
       SPRING_FLYWAY_USER: orders
       SPRING_FLYWAY_PASSWORD: orders
+    ports:
+      - "9090:9090"
