@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     val grpcVersion: String by rootProject.extra
+    val allureVersion = "2.27.0"
 
     implementation(project(":analytics-proto"))
     testImplementation(kotlin("test"))
@@ -19,6 +20,7 @@ dependencies {
     testImplementation("org.jetbrains.exposed:exposed-jdbc:0.55.0")
     testImplementation("org.jetbrains.exposed:exposed-java-time:0.55.0")
     testImplementation("io.grpc:grpc-netty-shaded:$grpcVersion")
+    testImplementation("io.qameta.allure:allure-junit5:$allureVersion")
 }
 
 kotlin {

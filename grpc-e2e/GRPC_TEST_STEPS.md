@@ -10,3 +10,11 @@
 6. **Делаю gRPC-вызов.** Формирую `EnrichedOrder` на основе только что положенных в БД данных (тот же sellerId/orderId) и вызываю `processOrder`, как это делает Order Service в реальности.
 7. **Проверяю агрегат.** С тем же stub вызываю `getSellerAggregate` и убеждаюсь, что вернулся один агрегированный ответ с ожидаемыми полями (`totalOrders`, `totalItems`, `totalRevenue`).
 8. **Прибираю за собой.** Чищу тестовые записи из обеих баз (`deleteOrder`, `SellerAggregateRepository.deleteBySellerId`) в `@AfterEach`, чтобы тест оставался идемпотентным.
+
+## Allure: как включить и посмотреть шаги теста
+
+1. **Зависимость уже подключена.** В `grpc-e2e/build.gradle.kts` добавлен `io.qameta.allure:allure-junit5`, а сам тест помечен `@ExtendWith(AllureJunit5::class)`, поэтому шаги (`Allure.step`) пишутся автоматически.
+2. **Запусти тесты.** Выполни `./gradlew :grpc-e2e:test` (в окружении должны быть подняты сервисы и БД, см. шаги выше). В каталоге `grpc-e2e/build/allure-results` появятся json-файлы с результатами.
+3. **Сгенерируй отчёт.** Убедись, что установлен CLI Allure (например, `brew install allure` или `scoop install allure`). Затем запусти:
+   - `allure generate grpc-e2e/build/allure-results -o grpc-e2e/build/allure-report --clean`
+4. **Открой отчёт локально.** Выполни `allure open grpc-e2e/build/allure-report` и перейди по открывшемуся адресу. Там будут видны тесты и детальные шаги с описанием подключения, запроса, ответа и закрытия канала.

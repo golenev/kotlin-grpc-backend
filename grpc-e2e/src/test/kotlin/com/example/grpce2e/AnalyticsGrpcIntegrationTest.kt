@@ -13,11 +13,14 @@ import com.example.grpce2e.db.seedOrder
 import io.grpc.ManagedChannelBuilder
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.Allure
+import io.qameta.allure.junit5.AllureJunit5
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import java.math.BigDecimal
 
+@ExtendWith(AllureJunit5::class)
 class AnalyticsGrpcIntegrationTest {
 
     private val sellerId = "SELLER-GRPC"
