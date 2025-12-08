@@ -32,7 +32,7 @@ class OrderGrpcAggregationIntegrationTest {
     @Test
     fun `order-service aggregates orders via grpc`() {
         val channel = ManagedChannelBuilder
-            .forTarget(System.getenv("ORDER_GRPC_TARGET") ?: "localhost:9090")
+            .forTarget(System.getenv("ORDER_GRPC_TARGET") ?: "localhost:9091")
             .usePlaintext()
             .build()
 
