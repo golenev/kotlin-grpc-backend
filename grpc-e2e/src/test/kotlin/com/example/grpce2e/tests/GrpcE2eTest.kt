@@ -1,12 +1,11 @@
-package com.example.grpce2e
+package com.example.grpce2e.tests
 
 import com.example.grpce2e.db.SellerAggregateRepository
 import com.example.grpce2e.kafka.OrdersProducerKafkaSettings
 import com.example.grpce2e.kafka.ProducerKafkaService
 import com.example.grpce2e.model.OrderEvent
 import com.example.grpce2e.model.OrderItem
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.example.grpce2e.util.mapper
 import io.kotest.assertions.nondeterministic.eventuallyConfig
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -22,7 +21,6 @@ import kotlin.time.Duration.Companion.seconds
 import io.kotest.assertions.nondeterministic.eventually
 
 class GrpcE2eTest {
-    private val objectMapper = ObjectMapper().registerKotlinModule()
     private val producerSettings = OrdersProducerKafkaSettings()
     private lateinit var producer: ProducerKafkaService<OrderEvent>
     private val httpClient = HttpClient.newHttpClient()
@@ -69,7 +67,7 @@ class GrpcE2eTest {
         producer = ProducerKafkaService(
             cfg = producerConfig,
             topic = producerSettings.inputTopic,
-            mapper = objectMapper
+            mapper = mapper
         )
 
         producer.use { producer ->

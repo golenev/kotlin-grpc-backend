@@ -1,4 +1,4 @@
-package com.example.grpce2e.wiremock
+package com.example.grpce2e.tests
 
 import io.restassured.RestAssured
 import io.restassured.http.ContentType

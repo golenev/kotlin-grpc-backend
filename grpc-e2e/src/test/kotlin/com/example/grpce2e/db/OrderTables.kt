@@ -65,7 +65,7 @@ data class GeoSeed(
     val regionalCoef: Double,
 )
 
-fun seedOrder(order: OrderSeed) {
+fun insertLinkedEntitiesAsOrder(order: OrderSeed) {
     dbOrdersExec {
         OrdersTable.insert {
             it[orderId] = order.orderId
