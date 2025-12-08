@@ -1,7 +1,9 @@
 package com.example.grpce2e
 
 import com.example.analytics.AnalyticsServiceGrpc
+import com.example.analytics.EnrichedOrder
 import com.example.analytics.GetSellerAggregateRequest
+import com.example.analytics.ProcessOrderResult
 import com.example.grpce2e.db.GeoSeed
 import com.example.grpce2e.db.OrderItemSeed
 import com.example.grpce2e.db.OrderSeed
@@ -29,19 +31,21 @@ class OrderServiceGrpcIntegrationTest {
 
     @Test
     fun `order service aggregates seller orders via grpc`() {
-        val target = step("Определяем адрес gRPC Order Service, куда будем подключаться") {
-            System.getenv("ORDER_GRPC_TARGET") ?: "localhost:9090"
+        val target = step("Определяем адрес gRPC-эндпоинта, куда будем подключаться") {
+            System.getenv("ANALYTICS_GRPC_TARGET") ?: "localhost:9091"
         }
 
-        val channel = step("Открываем небезопасный (plaintext) gRPC-канал до Order Service по адресу $target") {
+        val channel = step("Открываем небезопасный (plaintext) gRPC-канал до Analytics Service по адресу $target") {
             ManagedChannelBuilder.forTarget(target).usePlaintext().build()
         }
 
-        val stub = step("Создаем blocking stub — клиентский объект, через который будем делать gRPC-вызовы к Order Service") {
+        val stub = step("Создаем blocking stub — клиентский объект, через который будем делать gRPC-вызовы") {
             AnalyticsServiceGrpc.newBlockingStub(channel)
         }
 
-        step("Подготавливаем в базе Orders три заказа одного продавца $sellerId") {
+        val amounts = listOf(100.0, 50.0, 25.0)
+
+        val orders = step("Подготавливаем в базе Orders три заказа одного продавца $sellerId") {
             seedOrder(
                 OrderSeed(
                     orderId = orderIds[0],
@@ -101,6 +105,38 @@ class OrderServiceGrpcIntegrationTest {
                     ),
                 ),
             )
+            orderIds.mapIndexed { index, orderId ->
+                EnrichedOrder.newBuilder()
+                    .setOrderId(orderId)
+                    .setSellerId(sellerId)
+                    .setCustomerId("customer-g${index + 1}")
+                      .addAllItems(
+                        listOf(
+                            com.example.analytics.OrderItem.newBuilder()
+                                .setSku("SKU-${100 + index}")
+                                .setQty(1)
+                                .setPrice(amounts[index])
+                                .build(),
+                        ),
+                    )
+                      .setTotalAmount(amounts[index])
+                    .setCurrency("RUB")
+                    .setChannel("WEB")
+                    .setLat(55.75)
+                    .setLon(37.61)
+                    .setRegion("Москва")
+                    .setCity("Москва")
+                    .setTimezone("Europe/Moscow")
+                    .setRegionalCoef(1.0)
+                    .build()
+            }
+        }
+
+        step("Отправляем обогащенные заказы напрямую в Analytics Service через processOrder") {
+            orders.forEach { order ->
+                val result: ProcessOrderResult = stub.processOrder(order)
+                result.success shouldBe true
+            }
         }
 
         try {
