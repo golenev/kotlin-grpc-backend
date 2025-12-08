@@ -1,15 +1,16 @@
 import com.google.protobuf.gradle.id
 
 plugins {
-    java
+    `java-library`
     id("com.google.protobuf")
 }
 
 dependencies {
     val grpcVersion: String by rootProject.extra
-    implementation("io.grpc:grpc-protobuf:$grpcVersion")
-    implementation("io.grpc:grpc-stub:$grpcVersion")
-    implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
+    api("io.grpc:grpc-protobuf:$grpcVersion")
+    api("io.grpc:grpc-stub:$grpcVersion")
+    api("io.grpc:grpc-netty-shaded:$grpcVersion")
+    api("com.google.protobuf:protobuf-java:3.25.5")
     compileOnly("javax.annotation:javax.annotation-api:1.3.2")
 }
 

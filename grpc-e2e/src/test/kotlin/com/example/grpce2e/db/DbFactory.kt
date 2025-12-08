@@ -1,13 +1,12 @@
 package com.example.grpce2e.db
 
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.Transaction
-import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.transaction
 
 enum class DbType {
-    ANALYTICS
+    ANALYTICS,
+    ORDERS,
 }
 
 object DbFactory {
@@ -16,18 +15,30 @@ object DbFactory {
 
     fun <T> transaction(dbType: DbType, statement: Transaction.() -> T): T {
         val database = databases.getOrPut(dbType) {
+            val (url, user, password) = when (dbType) {
+                DbType.ANALYTICS -> Triple(
+                    Environment.ANALYTICS_DB_URL,
+                    Environment.ANALYTICS_DB_USER,
+                    Environment.ANALYTICS_DB_PASSWORD,
+                )
+                DbType.ORDERS -> Triple(
+                    Environment.ORDER_DB_URL,
+                    Environment.ORDER_DB_USER,
+                    Environment.ORDER_DB_PASSWORD,
+                )
+            }
             Database.connect(
-                url = Environment.DB_URL,
+                url = url,
                 driver = Environment.DB_DRIVER,
-                user = Environment.DB_USER,
-                password = Environment.DB_PASSWORD,
+                user = user,
+                password = password,
             )
         }
         return transaction(db = database) {
-            addLogger(StdOutSqlLogger)
             statement()
         }
     }
 }
 
 fun <T> dbAnalyticsExec(block: Transaction.() -> T): T = DbFactory.transaction(DbType.ANALYTICS, block)
+fun <T> dbOrdersExec(block: Transaction.() -> T): T = DbFactory.transaction(DbType.ORDERS, block)
