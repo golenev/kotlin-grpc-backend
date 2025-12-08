@@ -13,7 +13,12 @@ spring:
         format_sql: true
   flyway:
     enabled: true
-
 grpc:
-  server:
-    port: ${GRPC_SERVER_PORT:9091}
+  client:
+    orderAggregation:
+      address: ${ORDER_GRPC_TARGET:static://localhost:9090}
+      enableKeepAlive: true
+      negotiationType: PLAINTEXT
+
+server:
+  port: ${SERVER_PORT:8081}

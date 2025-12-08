@@ -1,7 +1,7 @@
 package com.example.grpce2e
 
-import com.example.analytics.AnalyticsServiceGrpc
-import com.example.analytics.GetSellerAggregateRequest
+import com.example.order.OrderAggregationServiceGrpc
+import com.example.order.SellerAggregateRequest
 import io.grpc.ManagedChannelBuilder
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.Allure
@@ -35,11 +35,11 @@ class OrderGrpcAggregationIntegrationTest {
     @Test
     fun `order-service aggregates orders via grpc`() {
         val channel = ManagedChannelBuilder
-            .forAddress("localhost", 9091)
+            .forAddress("localhost", 9090)
             .usePlaintext()
             .build()
 
-        val stub = AnalyticsServiceGrpc.newBlockingStub(channel)
+        val stub = OrderAggregationServiceGrpc.newBlockingStub(channel)
 
         try {
             step("Подготовка данных в БД order-service") {
@@ -104,15 +104,13 @@ class OrderGrpcAggregationIntegrationTest {
 
             val aggregate =
                 step("Вызов gRPC ручки order-service") {
-                    stub.getSellerAggregate(
-                        GetSellerAggregateRequest.newBuilder().setSellerId(sellerId).build(),
-                    )
+                    stub.getSellerAggregate(SellerAggregateRequest.newBuilder().setSellerId(sellerId).build())
                 }
 
             step("Проверка агрегированного ответа") {
                 aggregate.sellerId shouldBe sellerId
-                aggregate.totalOrders shouldBe 3
-                aggregate.totalRevenue shouldBe 175.0
+                aggregate.ordersCount shouldBe 3
+                aggregate.totalAmount shouldBe 175.0
             }
         } finally {
             step("Закрываем канал") {

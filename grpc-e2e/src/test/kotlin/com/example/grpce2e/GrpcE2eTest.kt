@@ -8,12 +8,16 @@ import com.example.grpce2e.model.OrderItem
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.kotest.assertions.nondeterministic.eventuallyConfig
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.nulls.shouldNotBeNull
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import kotlin.time.Duration.Companion.seconds
 import io.kotest.assertions.nondeterministic.eventually
 
@@ -21,6 +25,7 @@ class GrpcE2eTest {
     private val objectMapper = ObjectMapper().registerKotlinModule()
     private val producerSettings = OrdersProducerKafkaSettings()
     private lateinit var producer: ProducerKafkaService<OrderEvent>
+    private val httpClient = HttpClient.newHttpClient()
     val sellerId = "SELLER-TEST"
 
     @AfterEach
@@ -35,6 +40,7 @@ class GrpcE2eTest {
 
         val aggregate = runBlocking {
             eventually(config = positiveConfig) {
+                triggerAggregation()
                 SellerAggregateRepository.findBySellerId(sellerId).shouldNotBeNull()
            }
         }
@@ -45,6 +51,16 @@ class GrpcE2eTest {
         aggregate.totalRevenue shouldBe BigDecimal("550.00")
         aggregate.avgCheck shouldBe BigDecimal("183.33")
 
+    }
+
+    private fun triggerAggregation() {
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:8081/api/analytics/seller/${sellerId}/aggregate"))
+            .POST(HttpRequest.BodyPublishers.noBody())
+            .build()
+
+        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+        response.statusCode() shouldBe 200
     }
 
     private fun sendOrders() {

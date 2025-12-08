@@ -22,9 +22,7 @@ dependencies {
     val grpcVersion: String by rootProject.extra
     implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
     implementation("io.grpc:grpc-stub:$grpcVersion")
-
-    // gRPC client starter (трогать не будем)
-    implementation("net.devh:grpc-client-spring-boot-starter:3.1.0.RELEASE")
+    implementation("net.devh:grpc-server-spring-boot-starter:3.1.0.RELEASE")
 
     // Persistence & migrations
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
