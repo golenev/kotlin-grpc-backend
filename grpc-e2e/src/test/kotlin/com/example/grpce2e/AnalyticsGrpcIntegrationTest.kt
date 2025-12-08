@@ -12,6 +12,7 @@ import com.example.grpce2e.db.deleteOrder
 import com.example.grpce2e.db.seedOrder
 import io.grpc.ManagedChannelBuilder
 import io.kotest.matchers.shouldBe
+import io.qameta.allure.Allure
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -56,45 +57,64 @@ class AnalyticsGrpcIntegrationTest {
 
     @Test
     fun `analytics aggregates orders via grpc call`() {
-        val target = System.getenv("ANALYTICS_GRPC_TARGET") ?: "localhost:9091"
-        val channel = ManagedChannelBuilder.forTarget(target).usePlaintext().build()
+        val target = step("Определяем адрес gRPC Analytics Service, куда будем подключаться") {
+            System.getenv("ANALYTICS_GRPC_TARGET") ?: "localhost:9091"
+        }
 
-        val stub = AnalyticsServiceGrpc.newBlockingStub(channel)
+        val channel = step("Открываем небезопасный (plaintext) gRPC-канал до Analytics Service по адресу $target") {
+            ManagedChannelBuilder.forTarget(target).usePlaintext().build()
+        }
 
-        val request = EnrichedOrder.newBuilder()
-            .setOrderId(orderId)
-            .setSellerId(sellerId)
-            .setCustomerId("CUSTOMER-GRPC")
-            .addAllItems(
-                listOf(
-                    OrderItem.newBuilder().setSku("SKU-1").setQty(1).setPrice(45.0).build(),
-                    OrderItem.newBuilder().setSku("SKU-2").setQty(2).setPrice(39.23).build(),
-                ),
-            )
-            .setTotalAmount(123.46)
-            .setCurrency("RUB")
-            .setChannel("WEB")
-            .setLat(55.75)
-            .setLon(37.61)
-            .setRegion("Москва")
-            .setCity("Москва")
-            .setTimezone("Europe/Moscow")
-            .setRegionalCoef(1.25)
-            .build()
+        val stub = step("Создаем blocking stub — клиентский объект, через который будем делать gRPC-вызовы") {
+            AnalyticsServiceGrpc.newBlockingStub(channel)
+        }
+
+        val request = step("Собираем gRPC-запрос EnrichedOrder — передаем заказ и гео, как будто заказ пришел в Analytics") {
+            EnrichedOrder.newBuilder()
+                .setOrderId(orderId)
+                .setSellerId(sellerId)
+                .setCustomerId("CUSTOMER-GRPC")
+                .addAllItems(
+                    listOf(
+                        OrderItem.newBuilder().setSku("SKU-1").setQty(1).setPrice(45.0).build(),
+                        OrderItem.newBuilder().setSku("SKU-2").setQty(2).setPrice(39.23).build(),
+                    ),
+                )
+                .setTotalAmount(123.46)
+                .setCurrency("RUB")
+                .setChannel("WEB")
+                .setLat(55.75)
+                .setLon(37.61)
+                .setRegion("Москва")
+                .setCity("Москва")
+                .setTimezone("Europe/Moscow")
+                .setRegionalCoef(1.25)
+                .build()
+        }
 
         try {
-            stub.processOrder(request)
+            step("Шлем заказ в Analytics по публичному методу processOrder — сервис дальше сам вызовет Order Service") {
+                stub.processOrder(request)
+            }
 
-            val aggregate = stub.getSellerAggregate(
-                GetSellerAggregateRequest.newBuilder().setSellerId(sellerId).build(),
-            )
+            val aggregate = step("Дергаем метод getSellerAggregate — Analytics читает все заказы продавца и отдает агрегат") {
+                stub.getSellerAggregate(
+                    GetSellerAggregateRequest.newBuilder().setSellerId(sellerId).build(),
+                )
+            }
 
-            aggregate.sellerId shouldBe sellerId
-            aggregate.totalOrders shouldBe 1
-            aggregate.totalItems shouldBe 3
-            aggregate.totalRevenue shouldBe 123.46
+            step("Проверяем, что пришел один агрегированный ответ с ожидаемыми суммами и метаданными") {
+                aggregate.sellerId shouldBe sellerId
+                aggregate.totalOrders shouldBe 1
+                aggregate.totalItems shouldBe 3
+                aggregate.totalRevenue shouldBe 123.46
+            }
         } finally {
-            channel.shutdownNow()
+            step("Аккуратно закрываем gRPC-канал, чтобы не оставлять висящие подключения") {
+                channel.shutdownNow()
+            }
         }
     }
+
+    private fun <T> step(description: String, block: () -> T): T = Allure.step(description, block)
 }
