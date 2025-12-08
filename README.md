@@ -44,3 +44,9 @@ curl "http://localhost:8031/geo?lat=55&lon=37"
 ```
 
 Тест отправляет 3 заказа в Kafka-топик `big-communal-orders-topic`, ждёт обработки цепочкой **Order Service → WireMock → Analytics Service**, затем читает агрегат продавца из базы Analytics Service и проверяет сумму заказов.
+
+### gRPC-интеграционный тест order-service
+
+Интеграционный сценарий `grpc-e2e` проверяет публичное gRPC API order-service: напрямую создаёт три заказа одного продавца в базе order-service, подключается к gRPC-серверу order-service (по умолчанию `localhost:9090` или переменная окружения `ORDER_GRPC_TARGET`), вызывает метод получения агрегата продавца и проверяет, что вернулись три заказа и сумма 175.0. В этом тесте **не используется analytics-service**.
+
+Чтобы сгенерировать gRPC-клиентские классы из `.proto`, запусти `gradlew.bat :analytics-proto:generateProto ` — артефакты будут доступны для тестов через модуль `analytics-proto`.
