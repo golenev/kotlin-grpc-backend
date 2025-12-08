@@ -16,6 +16,7 @@ dependencies {
     testImplementation("org.jetbrains.exposed:exposed-dao:0.55.0")
     testImplementation("org.jetbrains.exposed:exposed-jdbc:0.55.0")
     testImplementation("org.jetbrains.exposed:exposed-java-time:0.55.0")
+    testImplementation("io.grpc:grpc-netty-shaded:1.64.0")
 }
 
 kotlin {
