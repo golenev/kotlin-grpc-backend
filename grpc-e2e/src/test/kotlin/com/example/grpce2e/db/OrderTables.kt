@@ -1,17 +1,10 @@
 package com.example.grpce2e.db
 
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
 import java.math.BigDecimal
-
-object OrderServiceEnvironment {
-    val DB_URL: String = System.getenv("ORDER_JDBC_URL") ?: "jdbc:postgresql://localhost:5434/orders"
-    val DB_USER: String = System.getenv("ORDER_DB_USER") ?: "orders"
-    val DB_PASSWORD: String = System.getenv("ORDER_DB_PASSWORD") ?: "orders"
-}
 
 object OrdersTable : Table("orders") {
     val orderId = text("order_id")
@@ -73,12 +66,7 @@ data class GeoSeed(
 )
 
 fun seedOrder(order: OrderSeed) {
-    transaction(
-        url = OrderServiceEnvironment.DB_URL,
-        driver = Environment.DB_DRIVER,
-        user = OrderServiceEnvironment.DB_USER,
-        password = OrderServiceEnvironment.DB_PASSWORD,
-    ) {
+    dbOrdersExec {
         OrdersTable.insert {
             it[orderId] = order.orderId
             it[sellerId] = order.sellerId
@@ -110,12 +98,7 @@ fun seedOrder(order: OrderSeed) {
 }
 
 fun deleteOrder(orderId: String) {
-    transaction(
-        url = OrderServiceEnvironment.DB_URL,
-        driver = Environment.DB_DRIVER,
-        user = OrderServiceEnvironment.DB_USER,
-        password = OrderServiceEnvironment.DB_PASSWORD,
-    ) {
+    dbOrdersExec {
         OrderItemsTable.deleteWhere { OrderItemsTable.orderId eq orderId }
         OrderGeoTable.deleteWhere { OrderGeoTable.orderId eq orderId }
         OrdersTable.deleteWhere { OrdersTable.orderId eq orderId }
