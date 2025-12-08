@@ -13,6 +13,7 @@ import java.math.BigDecimal
 import com.example.grpce2e.db.GeoSeed
 import com.example.grpce2e.db.OrderItemSeed
 import com.example.grpce2e.db.OrderSeed
+import com.example.grpce2e.db.SellerAggregateRepository
 import com.example.grpce2e.db.deleteOrder
 import com.example.grpce2e.db.seedOrder
 
@@ -26,6 +27,8 @@ class OrderGrpcAggregationIntegrationTest {
     fun cleanUp() {
         step("Очистка данных") {
             orderIds.forEach { deleteOrder(it) }
+            SellerAggregateRepository.deleteBySellerId(sellerId)
+
         }
     }
 
