@@ -27,3 +27,9 @@ dependencies {
 kotlin {
     jvmToolchain(21)
 }
+
+tasks.test {
+    testLogging {
+        showStandardStreams = true
+    }
+}
