@@ -1,8 +1,6 @@
 package com.example.grpce2e.tests
 
-import com.example.order.OrderAggregationServiceGrpc
 import com.example.order.SellerAggregateRequest
-import io.grpc.ManagedChannelBuilder
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.junit5.AllureJunit5
 import org.junit.jupiter.api.AfterEach
@@ -15,8 +13,8 @@ import com.example.grpce2e.db.OrderSeed
 import com.example.grpce2e.db.SellerAggregateRepository
 import com.example.grpce2e.db.deleteOrder
 import com.example.grpce2e.db.insertLinkedEntitiesAsOrder
+import com.example.grpce2e.grpc.OrderAggregationGrpcClient
 import com.example.grpce2e.util.step
-import com.example.grpce2e.util.useGrpc
 import io.kotest.matchers.nulls.shouldNotBeNull
 
 @ExtendWith(AllureJunit5::class)
@@ -95,16 +93,11 @@ class OrderGrpcIntegrationTest {
             )
         }
 
-        val aggregate = ManagedChannelBuilder
-            .forAddress("localhost", 9090)
-            .usePlaintext()
-            .build().useGrpc {
-                val stub: OrderAggregationServiceGrpc.OrderAggregationServiceBlockingStub? = OrderAggregationServiceGrpc.newBlockingStub(it)
-                step("Вызов gRPC ручки order-service") {
-                    stub.shouldNotBeNull()
-                    stub.getSellerAggregate(SellerAggregateRequest.newBuilder().setSellerId(sellerId).build())
-                }
-            }
+        val aggregate = step("Вызов gRPC ручки order-service") {
+            val stub = OrderAggregationGrpcClient.stub
+            stub.shouldNotBeNull()
+            stub.getSellerAggregate(SellerAggregateRequest.newBuilder().setSellerId(sellerId).build())
+        }
 
         step("Проверка агрегированного ответа") {
             aggregate.sellerId shouldBe sellerId
@@ -114,5 +107,4 @@ class OrderGrpcIntegrationTest {
     }
 
 }
-
 
