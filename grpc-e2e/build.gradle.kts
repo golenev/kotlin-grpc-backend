@@ -21,8 +21,15 @@ dependencies {
     testImplementation("org.jetbrains.exposed:exposed-java-time:0.55.0")
     testImplementation("io.grpc:grpc-netty-shaded:$grpcVersion")
     testImplementation("io.qameta.allure:allure-junit5:$allureVersion")
+    testImplementation("ch.qos.logback:logback-classic:1.5.6")
 }
 
 kotlin {
     jvmToolchain(21)
+}
+
+tasks.test {
+    testLogging {
+        showStandardStreams = true
+    }
 }

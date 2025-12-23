@@ -7,6 +7,7 @@ import com.example.grpce2e.model.OrderEvent
 import com.example.grpce2e.model.OrderItem
 import com.example.grpce2e.util.mapper
 import io.kotest.assertions.nondeterministic.eventuallyConfig
+import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.nulls.shouldNotBeNull
 import kotlinx.coroutines.runBlocking
@@ -58,7 +59,9 @@ class GrpcE2eTest {
             .build()
 
         val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
-        response.statusCode() shouldBe 200
+        withClue("HTTP ${response.statusCode()} body: ${response.body()}") {
+            response.statusCode() shouldBe 200
+        }
     }
 
     private fun sendOrders() {
