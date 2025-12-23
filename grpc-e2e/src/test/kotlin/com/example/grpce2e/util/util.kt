@@ -3,7 +3,6 @@ package com.example.grpce2e.util
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.grpc.ManagedChannel
 import io.qameta.allure.Allure
@@ -22,5 +21,4 @@ val mapper: ObjectMapper = jacksonObjectMapper()
     .findAndRegisterModules()
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     .configure(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES, true)//если в data class есть поле, которого нет в JSON → ошибка
-    .setPropertyNamingStrategy(PropertyNamingStrategies.SnakeCaseStrategy())
     .setSerializationInclusion(JsonInclude.Include.NON_NULL)
