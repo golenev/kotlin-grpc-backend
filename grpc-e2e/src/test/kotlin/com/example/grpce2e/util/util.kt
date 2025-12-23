@@ -5,9 +5,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.grpc.ManagedChannel
-import io.qameta.allure.Allure
+import io.qameta.allure.Step
 
-fun <T> step(description: String, block: () -> T): T = Allure.step(description, block)
+@Step("{stepName}")
+fun <T> step(stepName: String, body: () -> T): T = body()
 
 inline fun <T> ManagedChannel.useGrpc(block: (ManagedChannel) -> T): T {
     try {
